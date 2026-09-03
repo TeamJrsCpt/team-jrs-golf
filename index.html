@@ -139,6 +139,56 @@
   .hole-dot.current { border-color: var(--accent); border-width: 2px; color: var(--text-primary); }
   .hole-dot.done { background: var(--accent-soft); color: var(--text-primary); }
 
+  .loop-dot {
+    flex: 0 0 auto; width: 34px; height: 34px; border-radius: 50%;
+    border: 2px solid var(--border); cursor: pointer; padding: 0; position: relative;
+  }
+  .loop-dot.active { border-color: var(--text-primary); box-shadow: 0 0 0 2px var(--bg-card), 0 0 0 4px var(--text-primary); }
+  .loop-dot.active::after {
+    content: "✓"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: 15px; text-shadow: 0 1px 2px rgba(0,0,0,.6);
+  }
+  .loop-dot-mini {
+    display: inline-block; width: 14px; height: 14px; border-radius: 50%;
+    border: 1px solid var(--border-strong); flex: 0 0 auto;
+  }
+
+  .score-badge {
+    flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; font-weight: 700; font-size: 14px; color: var(--text-primary);
+  }
+  .score-birdie { border: 2px solid var(--accent); border-radius: 50%; }
+  .score-eagle { border: 2px solid var(--accent); border-radius: 50%; box-shadow: 0 0 0 3px var(--bg-card), 0 0 0 5px var(--accent); margin: 0 2px; }
+  .score-bogey { border: 2px solid var(--danger); border-radius: 5px; }
+  .score-dbogey { border: 2px solid var(--danger); border-radius: 5px; box-shadow: 0 0 0 3px var(--bg-card), 0 0 0 5px var(--danger); margin: 0 2px; }
+  .score-none { color: var(--text-muted); font-weight: 500; }
+
+  .scorecard-scroll { overflow-x: auto; padding-bottom: 2px; }
+  .scorecard-line { display: flex; align-items: center; gap: 4px; }
+  .scorecard-line + .scorecard-line { margin-top: 4px; }
+  .scorecard-cell { flex: 0 0 auto; width: 38px; display: flex; justify-content: center; }
+  .sc-total-cell { width: 42px; }
+  .sc-hole {
+    font-size: 11px; font-weight: 700; color: #fff; background: var(--accent);
+    border-radius: 5px; padding: 3px 0; width: 100%; text-align: center;
+  }
+  .sc-hole.sc-total-label { background: transparent; color: var(--text-muted); font-weight: 600; }
+  .sc-par { font-size: 10px; color: var(--text-muted); text-align: center; width: 100%; }
+  .sc-par.sc-total-value { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+  .sc-par-line { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 4px 0; }
+  .sc-summary {
+    display: flex; align-items: baseline; justify-content: center; flex-wrap: wrap; gap: 6px;
+    margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border);
+    font-size: 15px; font-weight: 700;
+  }
+  .sc-summary-big { font-size: 19px; font-weight: 800; }
+  .sc-summary-sep { color: var(--text-muted); font-weight: 400; }
+  .sc-summary-diff.sc-summary-under { color: var(--accent); }
+  .sc-summary-diff.sc-summary-over { color: var(--danger); }
+  .sc-summary-note { width: 100%; text-align: center; font-size: 11px; font-weight: 500; color: var(--text-muted); }
+  .scorecard-nine + .scorecard-nine { margin-top: 12px; }
+  .sc-legend { margin-top: 12px; font-size: 11px; color: var(--text-muted); text-align: center; }
+
   .chip {
     display: inline-flex; align-items: center; gap: 6px;
     background: var(--accent-soft); color: var(--text-primary);
@@ -149,6 +199,7 @@
     font-size: 15px; line-height: 1; padding: 2px;
   }
   .chip-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip-penalty { background: var(--danger-soft); color: var(--danger); }
 
   input[type="text"], input[type="number"], input[type="date"], select, textarea {
     width: 100%; min-height: 44px; border-radius: 10px; border: 1px solid var(--border-strong);
@@ -248,6 +299,55 @@
 
   var DEFAULT_CLUBS = ["Driver", "3-wood", "5-wood", "Hybrid", "4-jern", "5-jern", "6-jern", "7-jern", "8-jern", "9-jern", "PW", "SW", "Putter"];
 
+  /* Forhåndsdefinerte baner med par per hull. Kilder: Oslo Golfklubb (oslogk.no, offisiell),
+     Miklagard og Holtsmark (offcourse.co), Haga (kryssjekket mot golfpass.com sine
+     løype-kombinasjonskort Blue/Yellow, Blue/Red og Yellow/Red – alle tre stemte overens),
+     Vidauban og Tyrifjord (par oppgitt/vist direkte av brukeren, fra Tyrifjords eget scorekort). */
+  var PRESET_COURSES = [
+    { id: "oslo", name: "Oslo Golfklubb", pars: [4, 5, 3, 4, 4, 4, 4, 3, 5, 5, 3, 4, 4, 4, 5, 3, 4, 4] },
+    { id: "miklagard", name: "Miklagard Golf", pars: [4, 4, 4, 5, 3, 5, 3, 4, 4, 3, 4, 4, 5, 4, 3, 5, 4, 4] },
+    { id: "holtsmark", name: "Holtsmark Golf", pars: [5, 4, 3, 4, 3, 5, 5, 4, 3, 4, 4, 3, 4, 4, 5, 4, 3, 5] },
+    { id: "vidauban", name: "Vidauban Golf", pars: [4, 4, 5, 3, 4, 3, 4, 5, 4, 4, 3, 5, 4, 5, 4, 3, 4, 4] },
+    { id: "tyrifjord", name: "Tyrifjord Golfklubb", pars: [4, 4, 3, 4, 5, 3, 4, 4, 5, 3, 5, 4, 3, 4, 4, 5, 4, 4] },
+    {
+      id: "haga", name: "Haga Golfklubb", loops: [
+        { id: "rod", label: "Rød", color: "#d03b3b", pars: [4, 4, 4, 4, 4, 3, 4, 3, 5] },
+        { id: "bla", label: "Blå", color: "#2a78d6", pars: [5, 3, 4, 4, 5, 4, 3, 4, 4] },
+        { id: "gul", label: "Gul", color: "#e0b429", pars: [4, 4, 4, 3, 5, 3, 4, 5, 4] }
+      ]
+    }
+  ];
+
+  var MISS_TYPES = [
+    { id: "bom_hoyre", label: "Bom høyre", penalty: false },
+    { id: "bom_venstre", label: "Bom venstre", penalty: false },
+    { id: "ob", label: "OB", penalty: true },
+    { id: "vann", label: "Vannhinder", penalty: true },
+    { id: "lost_ball", label: "Lost ball", penalty: true },
+    { id: "drop", label: "Drop", penalty: true }
+  ];
+  function missTypeLabel(id) {
+    var m = MISS_TYPES.find(function (t) { return t.id === id; });
+    return m ? m.label : id;
+  }
+  /* Sørger for at hullet har nøyaktig ett auto-lagt straffeslag hvis minst én av de
+     valgte bom-taggene faktisk gir straffeslag (OB/vannhinder/lost ball/drop) —
+     rene retningstagger (bom høyre/venstre) gir ikke straffeslag alene. */
+  function syncPenaltyShot(h) {
+    var penaltyTags = (h.missTypes || []).filter(function (id) {
+      var t = MISS_TYPES.find(function (m) { return m.id === id; });
+      return t && t.penalty;
+    });
+    var existing = h.shots.find(function (s) { return s.auto && s.penalty; });
+    if (penaltyTags.length) {
+      var label = "Straffeslag (" + penaltyTags.map(missTypeLabel).join(", ") + ")";
+      if (existing) existing.club = label;
+      else h.shots.push({ club: label, len: null, penalty: true, auto: true });
+    } else if (existing) {
+      h.shots = h.shots.filter(function (s) { return !(s.auto && s.penalty); });
+    }
+  }
+
   var state = {
     profile: readJSON(LS.profile, null),
     rounds: readJSON(LS.rounds, []),
@@ -312,11 +412,12 @@
     var totalPutts = holes.reduce(function (sum, h) { return sum + (typeof h.putts === "number" ? h.putts : 0); }, 0);
     var puttedHoles = holes.filter(function (h) { return typeof h.putts === "number"; }).length;
     var avgPuttsPerHole = puttedHoles ? totalPutts / puttedHoles : null;
+    var lostBalls = holes.filter(function (h) { return h.missTypes && h.missTypes.indexOf("lost_ball") !== -1; }).length;
 
     var clubMap = {};
     holes.forEach(function (h) {
       (h.shots || []).forEach(function (s) {
-        if (!s.club) return;
+        if (!s.club || s.penalty) return;
         if (!clubMap[s.club]) clubMap[s.club] = { name: s.club, sum: 0, n: 0 };
         clubMap[s.club].sum += s.len;
         clubMap[s.club].n += 1;
@@ -335,6 +436,7 @@
       fairwayPct: fairwayPct,
       avgPuttsPerHole: avgPuttsPerHole,
       totalPutts: totalPutts,
+      lostBalls: lostBalls,
       clubs: clubs
     };
   }
@@ -350,7 +452,7 @@
     rounds.forEach(function (r) {
       r.holes.forEach(function (h) {
         (h.shots || []).forEach(function (s) {
-          if (!s.club) return;
+          if (!s.club || s.penalty) return;
           var m = ensure(s.club);
           m[100].sum += s.len; m[100].n += 1;
         });
@@ -642,26 +744,158 @@
   function ensureActiveRound() {
     if (!state.active) {
       var holes = [];
-      for (var i = 1; i <= 18; i++) holes.push({ n: i, par: null, fairway: null, putts: 0, shots: [] });
+      for (var i = 1; i <= 18; i++) holes.push({ n: i, par: null, fairway: null, missTypes: [], putts: 0, shots: [] });
       state.active = {
         id: uid(),
         date: new Date().toISOString().slice(0, 10),
         course: "",
+        courseId: null,
+        hagaFront: null,
+        hagaBack: null,
+        courseConfirmed: false,
         cursor: 0,
         holes: holes
       };
       saveActive();
     }
   }
+
+  function findPresetCourse(id) {
+    return PRESET_COURSES.find(function (c) { return c.id === id; }) || null;
+  }
+  function applyPresetPars(preset) {
+    preset.pars.forEach(function (p, i) { state.active.holes[i].par = p; });
+    state.active.course = preset.name;
+  }
+  function applyHagaPars() {
+    var haga = findPresetCourse("haga");
+    var front = haga.loops.find(function (l) { return l.id === state.active.hagaFront; });
+    var back = haga.loops.find(function (l) { return l.id === state.active.hagaBack; });
+    if (front) front.pars.forEach(function (p, i) { state.active.holes[i].par = p; });
+    if (back) back.pars.forEach(function (p, i) { state.active.holes[9 + i].par = p; });
+    state.active.course = "Haga Golfklubb (" + (front ? front.label : "?") + "/" + (back ? back.label : "?") + ")";
+  }
+
+  /* ---- scorekort-notasjon: par = tall, birdie = sirkel, eagle = dobbel sirkel,
+     bogey = firkant, dobbelbogey (eller verre) = dobbel firkant ---- */
+  function scoreKind(strokes, par) {
+    if (!par || !strokes) return null;
+    var diff = strokes - par;
+    if (diff <= -2) return "eagle";
+    if (diff === -1) return "birdie";
+    if (diff === 0) return "par";
+    if (diff === 1) return "bogey";
+    return "dbogey";
+  }
+  function scoreBadgeHTML(strokes, par) {
+    var kind = scoreKind(strokes, par);
+    if (!kind) return '<span class="score-badge score-none">' + (strokes || "–") + "</span>";
+    return '<span class="score-badge score-' + kind + '">' + strokes + "</span>";
+  }
+  function holeStrokes(h) {
+    var n = (h.shots ? h.shots.length : 0) + (typeof h.putts === "number" ? h.putts : 0);
+    return n > 0 ? n : null;
+  }
+  function renderScorecardGrid(holes) {
+    function nineHTML(nine, label) {
+      var totalPar = nine.reduce(function (s, h) { return s + (h.par || 0); }, 0);
+      var anyPar = nine.some(function (h) { return h.par; });
+      var holesRow = nine.map(function (h) {
+        return '<div class="scorecard-cell"><div class="sc-hole">' + h.n + '</div></div>';
+      }).join("") + '<div class="scorecard-cell sc-total-cell"><div class="sc-hole sc-total-label">Sum</div></div>';
+      var parRow = nine.map(function (h) {
+        return '<div class="scorecard-cell"><div class="sc-par">' + (h.par ? "Par " + h.par : "–") + '</div></div>';
+      }).join("") + '<div class="scorecard-cell sc-total-cell"><div class="sc-par sc-total-value">' + (anyPar ? totalPar : "–") + '</div></div>';
+      var scoreRow = nine.map(function (h) {
+        var strokes = holeStrokes(h);
+        return '<div class="scorecard-cell">' + (strokes && h.par ? scoreBadgeHTML(strokes, h.par) : '<span class="score-badge score-none">' + (strokes || "–") + '</span>') + '</div>';
+      }).join("") + '<div class="scorecard-cell"></div>';
+      return '<div class="scorecard-nine"><div class="section-title">' + label + '</div>' +
+        '<div class="scorecard-scroll">' +
+        '<div class="scorecard-line">' + holesRow + '</div>' +
+        '<div class="scorecard-line sc-par-line">' + parRow + '</div>' +
+        '<div class="scorecard-line">' + scoreRow + '</div>' +
+        '</div></div>';
+    }
+    var totalStrokes = 0, totalPar = 0, playedCount = 0;
+    holes.forEach(function (h) {
+      var strokes = holeStrokes(h);
+      if (strokes && h.par) { totalStrokes += strokes; totalPar += h.par; playedCount++; }
+    });
+    var diff = totalStrokes - totalPar;
+    var diffLabel = diff === 0 ? "E" : (diff > 0 ? "+" + diff : String(diff));
+    var diffCls = diff === 0 ? "" : (diff > 0 ? " sc-summary-over" : " sc-summary-under");
+    var allParsKnown = holes.every(function (h) { return !!h.par; });
+    var summaryHTML = "";
+    if (playedCount) {
+      if (allParsKnown) {
+        var coursePar = holes.reduce(function (s, h) { return s + h.par; }, 0);
+        var projected = coursePar + diff;
+        var isComplete = playedCount === holes.length;
+        var note = isComplete ? "Ferdig runde" : "Projisert sluttsum (resten av hullene regnet til par)";
+        summaryHTML = '<div class="sc-summary"><span class="sc-summary-big">' + projected + "/" + coursePar + '</span>' +
+          '<span class="sc-summary-diff' + diffCls + '">(' + diffLabel + ')</span>' +
+          '<span class="sc-summary-note">' + note + '</span></div>';
+      } else {
+        summaryHTML = '<div class="sc-summary"><span>' + totalStrokes + ' slag</span><span class="sc-summary-sep">·</span><span>Par ' + totalPar + '</span><span class="sc-summary-sep">·</span><span class="sc-summary-diff' + diffCls + '">' + diffLabel + '</span>' +
+          '<span class="sc-summary-note">(' + playedCount + ' av 18 hull)</span></div>';
+      }
+    }
+    return '<div class="card scorecard">' + nineHTML(holes.slice(0, 9), "Hull 1–9") + nineHTML(holes.slice(9, 18), "Hull 10–18") +
+      summaryHTML +
+      '<div class="sc-legend">○ Birdie &nbsp; ○○ Eagle &nbsp; Par = tall &nbsp; □ Bogey &nbsp; □□ Dobbelbogey+</div></div>';
+  }
+
   function renderRound() {
     ensureActiveRound();
     var a = state.active;
     var h = a.holes[a.cursor];
     var out = "";
-    out += '<div class="card stack">' +
-      '<div class="row"><div class="field" style="margin-bottom:0;"><label>Dato</label><input type="date" id="rd-date" value="' + esc(a.date) + '" /></div>' +
-      '<div class="field" style="margin-bottom:0;"><label>Bane</label><input type="text" id="rd-course" value="' + esc(a.course) + '" placeholder="Valgfritt" /></div></div>' +
-      '</div>';
+    var hasValidCourseSelection = !!(a.courseId && (a.courseId !== "haga" || (a.hagaFront && a.hagaBack)));
+
+    out += '<div class="card stack">';
+    if (a.courseConfirmed && hasValidCourseSelection) {
+      var confirmedHaga = a.courseId === "haga" ? findPresetCourse("haga") : null;
+      var confirmedFront = confirmedHaga ? confirmedHaga.loops.find(function (l) { return l.id === a.hagaFront; }) : null;
+      var confirmedBack = confirmedHaga ? confirmedHaga.loops.find(function (l) { return l.id === a.hagaBack; }) : null;
+      out += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">' +
+        '<div style="display:flex;align-items:center;gap:6px;font-weight:700;font-size:15px;">' +
+        '<span>⛳ ' + esc(a.course) + '</span>' +
+        (confirmedFront ? '<span class="loop-dot-mini" style="background:' + confirmedFront.color + ';" title="' + confirmedFront.label + '"></span>' : "") +
+        (confirmedBack ? '<span class="loop-dot-mini" style="background:' + confirmedBack.color + ';" title="' + confirmedBack.label + '"></span>' : "") +
+        '</div>' +
+        '<button class="btn btn-ghost btn-sm" data-action="edit-course" style="flex:0 0 auto;">Bytt bane</button>' +
+        '</div>';
+    } else {
+      out += '<div class="row"><div class="field" style="margin-bottom:0;"><label>Dato</label><input type="date" id="rd-date" value="' + esc(a.date) + '" /></div>' +
+        '<div class="field" style="margin-bottom:0;"><label>Bane</label><input type="text" id="rd-course" value="' + esc(a.course) + '" placeholder="Valgfritt" /></div></div>' +
+        '<div><div class="section-title">Velg bane (valgfritt)</div><div class="chip-wrap">' +
+        PRESET_COURSES.map(function (c) {
+          var active = a.courseId === c.id;
+          return '<button class="toggle-btn' + (active ? " active" : "") + '" data-action="select-course" data-course="' + c.id + '" style="flex:0 0 auto;width:auto;padding:8px 14px;">' + esc(c.name) + '</button>';
+        }).join("") +
+        (a.courseId ? '<button class="toggle-btn" data-action="select-course-clear" style="flex:0 0 auto;width:auto;padding:8px 14px;">✕ Egendefinert</button>' : "") +
+        '</div></div>';
+
+      if (a.courseId === "haga") {
+        var haga = findPresetCourse("haga");
+        out += '<div style="margin-top:2px;"><div class="section-title">Hull 1–9 (løype)</div><div class="chip-wrap">' +
+          haga.loops.map(function (l) {
+            var active = a.hagaFront === l.id;
+            return '<button class="loop-dot' + (active ? " active" : "") + '" data-action="select-haga-loop" data-slot="front" data-loop="' + l.id + '" style="background:' + l.color + ';" aria-label="' + l.label + '" title="' + l.label + '"></button>';
+          }).join("") + '</div></div>';
+        out += '<div style="margin-top:2px;"><div class="section-title">Hull 10–18 (løype)</div><div class="chip-wrap">' +
+          haga.loops.map(function (l) {
+            var active = a.hagaBack === l.id;
+            return '<button class="loop-dot' + (active ? " active" : "") + '" data-action="select-haga-loop" data-slot="back" data-loop="' + l.id + '" style="background:' + l.color + ';" aria-label="' + l.label + '" title="' + l.label + '"></button>';
+          }).join("") + '</div></div>';
+      }
+
+      if (hasValidCourseSelection) {
+        out += '<button class="btn btn-primary btn-sm" data-action="confirm-course">✓ Bekreft bane</button>';
+      }
+    }
+    out += '</div>';
 
     out += '<div class="hole-strip">' + a.holes.map(function (hh, idx) {
       var cls = "hole-dot" + (idx === a.cursor ? " current" : "") + (hh.par ? " done" : "");
@@ -669,7 +903,8 @@
     }).join("") + '</div>';
 
     out += '<div class="card stack">';
-    out += '<h3>Hull ' + h.n + ' av 18</h3>';
+    out += '<div style="display:flex;align-items:center;justify-content:space-between;"><h3 style="margin:0;">Hull ' + h.n + ' av 18</h3>' +
+      (h.par && holeStrokes(h) ? scoreBadgeHTML(holeStrokes(h), h.par) : "") + '</div>';
     out += '<div><div class="section-title">Par</div><div class="toggle-group">' +
       [3, 4, 5].map(function (p) {
         return '<button class="toggle-btn' + (h.par === p ? " active" : "") + '" data-action="set-par" data-par="' + p + '">Par ' + p + '</button>';
@@ -679,11 +914,31 @@
       out += '<div><div class="section-title">Fairway truffet (utslag)</div><div class="toggle-group">' +
         '<button class="toggle-btn' + (h.fairway === "yes" ? " active" : "") + '" data-action="set-fairway" data-val="yes">✅ Ja</button>' +
         '<button class="toggle-btn' + (h.fairway === "no" ? " danger-active active" : "") + '" data-action="set-fairway" data-val="no">❌ Nei</button>' +
-        '</div></div>';
+        '</div>';
+      if (h.fairway === "no") {
+        var directionTypes = MISS_TYPES.filter(function (t) { return !t.penalty; });
+        var consequenceTypes = MISS_TYPES.filter(function (t) { return t.penalty; });
+        out += '<div style="margin-top:10px;"><div class="section-title">Retning</div><div class="toggle-group">' +
+          directionTypes.map(function (t) {
+            var active = h.missTypes && h.missTypes.indexOf(t.id) !== -1;
+            var arrow = t.id === "bom_venstre" ? "⬅ " : "";
+            var arrowEnd = t.id === "bom_hoyre" ? " ➡" : "";
+            return '<button class="toggle-btn' + (active ? " danger-active active" : "") + '" data-action="toggle-miss-type" data-miss="' + t.id + '">' + arrow + esc(t.label) + arrowEnd + '</button>';
+          }).join("") + '</div></div>';
+        out += '<div style="margin-top:10px;"><div class="section-title">Konsekvens (gir straffeslag)</div><div class="chip-wrap">' +
+          consequenceTypes.map(function (t) {
+            var active = h.missTypes && h.missTypes.indexOf(t.id) !== -1;
+            return '<button class="toggle-btn' + (active ? " danger-active active" : "") + '" data-action="toggle-miss-type" data-miss="' + t.id + '">' + esc(t.label) + '</button>';
+          }).join("") + '</div><div class="meta" style="font-size:11px;color:var(--text-muted);margin-top:4px;">Kan velge flere. Disse gir automatisk ett straffeslag.</div></div>';
+      }
+      out += '</div>';
     }
 
     out += '<div><div class="section-title">Slag registrert</div>';
-    out += '<div class="chip-wrap">' + (h.shots.length ? h.shots.map(function (s, i) {
+    out += '<div class="chip-wrap" id="rd-shots-chipwrap">' + (h.shots.length ? h.shots.map(function (s, i) {
+      if (s.penalty) {
+        return '<span class="chip chip-penalty">⚠️ ' + esc(s.club) + '<button data-action="remove-shot" data-i="' + i + '">×</button></span>';
+      }
       return '<span class="chip">' + esc(s.club) + ' — ' + s.len + ' m<button data-action="remove-shot" data-i="' + i + '">×</button></span>';
     }).join("") : '<span class="meta" style="color:var(--text-muted);font-size:13px;">Ingen slag lagt til ennå</span>') + '</div>';
     out += '<div class="row" style="margin-top:8px;">' +
@@ -705,6 +960,8 @@
         ? '<button class="btn btn-primary" data-action="finish-round">Fullfør runde ✔</button>'
         : '<button class="btn btn-primary" data-action="next-hole">Neste ›</button>') +
       '</div>';
+
+    out += renderScorecardGrid(a.holes);
     out += '<button class="btn btn-ghost" data-action="discard-round">Forkast runden</button>';
     return out;
   }
@@ -716,14 +973,16 @@
     var s = computeStats([r]);
     var out = '<div class="card">' +
       '<h3>' + esc(r.date) + (r.course ? " — " + esc(r.course) : "") + '</h3>' +
-      '<div class="meta">' + s.holesCount + ' hull registrert · ' + s.totalPutts + ' putter' + (s.fairwayPct != null ? " · " + round1(s.fairwayPct) + "% fairway" : "") + '</div>' +
+      '<div class="meta">' + s.holesCount + ' hull registrert · ' + s.totalPutts + ' putter' + (s.fairwayPct != null ? " · " + round1(s.fairwayPct) + "% fairway" : "") + (s.lostBalls ? " · " + s.lostBalls + " tapt(e) ball(er)" : "") + '</div>' +
       '</div>';
+    out += renderScorecardGrid(r.holes);
     out += '<div class="card">';
     out += r.holes.filter(function (h) { return h.par; }).map(function (h) {
+      var strokes = holeStrokes(h);
       return '<div class="list-row"><div><div>Hull ' + h.n + ' · Par ' + h.par + '</div>' +
-        '<div class="meta">' + (h.fairway ? (h.fairway === "yes" ? "Fairway ✅" : "Fairway ❌") + " · " : "") + h.putts + ' putter' +
-        (h.shots.length ? " · " + h.shots.map(function (s) { return esc(s.club) + " " + s.len + "m"; }).join(", ") : "") +
-        '</div></div></div>';
+        '<div class="meta">' + (h.fairway ? (h.fairway === "yes" ? "Fairway ✅" : "Fairway ❌") + (h.fairway === "no" && h.missTypes && h.missTypes.length ? " (" + esc(h.missTypes.map(missTypeLabel).join(", ")) + ")" : "") + " · " : "") + h.putts + ' putter' +
+        (h.shots.length ? " · " + h.shots.map(function (s) { return s.penalty ? esc(s.club) : esc(s.club) + " " + s.len + "m"; }).join(", ") : "") +
+        '</div></div>' + (strokes ? scoreBadgeHTML(strokes, h.par) : "") + '</div>';
     }).join("");
     out += '</div>';
     out += '<button class="btn btn-danger" data-action="delete-round" data-id="' + r.id + '">Slett runde</button>';
@@ -780,6 +1039,7 @@
       statTile(stats.roundsCount, "Runder") +
       statTile(stats.fairwayPct == null ? "–" : round1(stats.fairwayPct) + "%", "Fairway-treff") +
       statTile(stats.avgPuttsPerHole == null ? "–" : round2(stats.avgPuttsPerHole), "Snitt putter/hull") +
+      statTile(stats.lostBalls, "Tapte baller") +
       '</div>';
 
     out += '<div class="card">';
@@ -947,15 +1207,54 @@
       saveRounds(); state.route = "home"; render(); showToast("Runde slettet"); return;
     }
 
+    if (action === "select-course") {
+      var preset = findPresetCourse(el.dataset.course);
+      if (!preset) return;
+      state.active.courseId = preset.id;
+      if (preset.loops) {
+        state.active.course = preset.name;
+        if (state.active.hagaFront && state.active.hagaBack) applyHagaPars();
+      } else {
+        applyPresetPars(preset);
+      }
+      saveActive(); render(); return;
+    }
+    if (action === "select-course-clear") {
+      state.active.courseId = null; state.active.hagaFront = null; state.active.hagaBack = null; state.active.courseConfirmed = false;
+      saveActive(); render(); return;
+    }
+    if (action === "select-haga-loop") {
+      if (el.dataset.slot === "front") state.active.hagaFront = el.dataset.loop;
+      else state.active.hagaBack = el.dataset.loop;
+      applyHagaPars();
+      saveActive(); render(); return;
+    }
+    if (action === "confirm-course") { state.active.courseConfirmed = true; saveActive(); render(); return; }
+    if (action === "edit-course") { state.active.courseConfirmed = false; saveActive(); render(); return; }
+
     if (action === "goto-hole") { state.active.cursor = Number(el.dataset.idx); saveActive(); render(); return; }
     if (action === "set-par") {
       var h = state.active.holes[state.active.cursor];
       h.par = Number(el.dataset.par);
-      if (h.par === 3) h.fairway = null;
+      if (h.par === 3) { h.fairway = null; h.missTypes = []; syncPenaltyShot(h); }
       saveActive(); render(); return;
     }
     if (action === "set-fairway") {
-      state.active.holes[state.active.cursor].fairway = el.dataset.val;
+      var fh = state.active.holes[state.active.cursor];
+      fh.fairway = el.dataset.val;
+      if (el.dataset.val === "yes") {
+        fh.missTypes = [];
+        syncPenaltyShot(fh);
+      }
+      saveActive(); render(); return;
+    }
+    if (action === "toggle-miss-type") {
+      var mh = state.active.holes[state.active.cursor];
+      if (!mh.missTypes) mh.missTypes = [];
+      var missId = el.dataset.miss;
+      var missIdx = mh.missTypes.indexOf(missId);
+      if (missIdx === -1) mh.missTypes.push(missId); else mh.missTypes.splice(missIdx, 1);
+      syncPenaltyShot(mh);
       saveActive(); render(); return;
     }
     if (action === "add-shot") {
