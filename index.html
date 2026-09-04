@@ -403,7 +403,14 @@
     }
   ];
 
-  var SHOT_TYPES = ["Sweetspot", "Chip", "Flop-shot", "Shank", "Topp", "Pull", "Push", "Draw", "Slice", "Blade"];
+  var SHOT_TYPES = ["Sweetspot", "Baby draw", "Draw", "Hook", "Snap hook", "Baby fade", "Fade", "Slice", "Chip", "Flop-shot", "Shank", "Topp", "Duff", "Pull", "Push", "Blade"];
+  /* Kun disse slagtypene regnes som representative for kølla sin "normale" lengde,
+     og telles dermed med i distansestatistikken (snittlengde per kølle) - både i
+     computeStats() og computeClubBreakdown() under. Rene mistreff (Chip, Shank,
+     Topp, Snap hook, Hook, osv.) og ekstreme utslag (Slice) trekker snittet feil
+     vei og skal ikke telles med, etter ønske fra Anders. */
+  var DISTANCE_STAT_TYPES = ["Sweetspot", "Baby draw", "Draw", "Baby fade", "Fade"];
+  function countsForDistanceStats(type) { return DISTANCE_STAT_TYPES.indexOf(type) !== -1; }
   var LANDING_SPOTS = ["Fairway", "Fairway bunker", "Rough", "Hazard", "Vann", "OB", "Fringe", "Green", "Green side bunker"];
   var PENALTY_LANDING_SPOTS = ["Vann", "OB"];
   function isPenaltyLanding(land) { return PENALTY_LANDING_SPOTS.indexOf(land) !== -1; }
@@ -636,7 +643,7 @@
     holes.forEach(function (h) {
       (h.shots || []).forEach(function (s) {
         var len = parseFloat(s.len);
-        if (!s.club || !len) return;
+        if (!s.club || !len || !countsForDistanceStats(s.type)) return;
         if (!clubMap[s.club]) clubMap[s.club] = { name: s.club, sum: 0, n: 0 };
         clubMap[s.club].sum += len;
         clubMap[s.club].n += 1;
@@ -674,7 +681,7 @@
       r.holes.forEach(function (h) {
         (h.shots || []).forEach(function (s) {
           var len = parseFloat(s.len);
-          if (!s.club || !len) return;
+          if (!s.club || !len || !countsForDistanceStats(s.type)) return;
           var m = ensure(s.club);
           m[100].sum += len; m[100].n += 1;
         });
@@ -695,6 +702,26 @@
         p50: { avg: avgOf(m[50]), n: m[50].n }
       };
     }).sort(function (a, b) { return (b.full.avg || 0) - (a.full.avg || 0); });
+  }
+
+  /* Teller opp hvor mange ganger hver slagtype er registrert på tvers av alle
+     runder - uavhengig av om slaget teller med i distansestatistikken (se
+     countsForDistanceStats over). Dette skal vise den faktiske fordelingen av
+     slagtyper (f.eks. hvor ofte man treffer sweetspot vs. baby draw vs. shank),
+     ikke bare de "rene" slagene som teller mot lengdesnittet. */
+  function computeShotTypeBreakdown(rounds) {
+    var counts = {};
+    SHOT_TYPES.forEach(function (t) { counts[t] = 0; });
+    rounds.forEach(function (r) {
+      r.holes.forEach(function (h) {
+        (h.shots || []).forEach(function (s) {
+          if (s.type && counts.hasOwnProperty(s.type)) counts[s.type] += 1;
+        });
+      });
+    });
+    return SHOT_TYPES.map(function (t) { return { type: t, n: counts[t] }; })
+      .filter(function (x) { return x.n > 0; })
+      .sort(function (a, b) { return b.n - a.n; });
   }
 
   /* Snittscore (antall slag = registrerte slag + putter) gruppert på par 3/4/5.
@@ -1342,6 +1369,21 @@
       out += withFull.map(function (c) {
         var pct = max ? (c.full.avg / max) * 100 : 0;
         return '<div class="bar-row"><div class="bar-label"><span>' + esc(c.name) + ' <span class="badge">' + c.full.n + ' slag</span></span><span>' + round1(c.full.avg) + ' m</span></div>' +
+          '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;"></div></div></div>';
+      }).join("");
+    }
+    out += '</div>';
+
+    out += '<div class="card">';
+    out += '<div class="section-title">Antall registrert per slagtype</div>';
+    var shotTypeBreakdown = computeShotTypeBreakdown(state.rounds);
+    if (!shotTypeBreakdown.length) {
+      out += '<div class="empty">Ingen slag registrert ennå.</div>';
+    } else {
+      var maxTypeN = shotTypeBreakdown[0].n;
+      out += shotTypeBreakdown.map(function (t) {
+        var pct = maxTypeN ? (t.n / maxTypeN) * 100 : 0;
+        return '<div class="bar-row"><div class="bar-label"><span>' + esc(t.type) + '</span><span>' + t.n + '</span></div>' +
           '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;"></div></div></div>';
       }).join("");
     }
