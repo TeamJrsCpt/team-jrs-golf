@@ -1,5 +1,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Team Jr's Statistikkbank</title>
 <style>
   :root {
@@ -296,6 +299,39 @@
 
 <div id="app-root"></div>
 <div id="toast" class="toast"></div>
+
+<script>
+/* ---- auto-oppdatering forbi nettleser-cache ----
+   GitHub Pages (og spesielt "Legg til på Hjem-skjerm"-snarveier på mobil) kan
+   mellomlagre denne filen lenge etter at en ny versjon er lastet opp. Dette holder
+   siden fersk automatisk, HELT uavhengig av og uten å røre localStorage (rundene/
+   profilen ligger trygt i en egen lagringsboks som ikke er en del av dette):
+   1. Ved hver sideåpning sjekkes filens ETag/Last-Modified rett mot serveren med
+      cache: "no-store" (går alltid forbi nettleserens cache for akkurat dette kallet).
+   2. Sammenlignes med forrige kjente verdi (lagret i localStorage under en egen,
+      teknisk nøkkel - ikke i nærheten av spillernes egne data-nøkler).
+   3. Er den ulik (dvs. en nyere fil faktisk ligger ute), tvinges én automatisk
+      omlasting med en ny URL (?_v=...) som garantert henter frisk versjon.
+   Feiler sjekken (frakoblet, gammel nettleser uten fetch, osv.) skjer ingenting -
+   appen fungerer akkurat som før, bare uten auto-oppdateringen denne gangen. */
+(function () {
+  "use strict";
+  try {
+    if ("fetch" in window) {
+      fetch(location.pathname, { method: "HEAD", cache: "no-store" }).then(function (r) {
+        var tag = r.headers.get("etag") || r.headers.get("last-modified");
+        if (!tag) return;
+        var key = "golf_page_version_v1";
+        var prev = localStorage.getItem(key);
+        localStorage.setItem(key, tag);
+        if (prev && prev !== tag) {
+          location.replace(location.pathname + "?_v=" + Date.now());
+        }
+      }).catch(function () { /* offline e.l. - fortsett med siden vi allerede har */ });
+    }
+  } catch (e) { /* fetch/localStorage utilgjengelig - ignorer */ }
+})();
+</script>
 
 <script>
 (function () {
